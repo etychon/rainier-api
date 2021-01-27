@@ -13,5 +13,5 @@ You need to rename `constants.py.example` to `constants.py` and add your own var
 
 Simply run the sample program with:
 
-python3 api-test.py
+`python3 api-test.py`
 
