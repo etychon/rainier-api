@@ -2,4 +2,8 @@ RAINIER_BASEURL = "https://rainierbts2.ciscoiotdev.io"
 RAINIER_USERNAME = "name@cisco.com"
 RAINIER_PASSWORD = "xxpasswordxx"
 RAINIER_TENANTID = "61685eca-24ce-4cfb-9828-56c644cecb3c"
+# Only relevant when using API keys
+RAINIER_ORG_NAME = "Technical Marketing Engineers"
+RAINIER_API_KEY_NAME = "etychon"
+RAINIER_API_KEY_SECRET = "***REMOVED***"
 
