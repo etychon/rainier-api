@@ -6,50 +6,57 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # constants
 debug = True 
+use_API_Key = True
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-### REQUESTING TOKEN FOR AUTHENTICATION 
+if (not use_API_Key):
 
-print("Authenticating with username/password...")
-task = {"username":constants.RAINIER_USERNAME,"password":constants.RAINIER_PASSWORD}
-resp = requests.post(constants.RAINIER_BASEURL+'/iam/auth/token', 
-	json=task, 
-	verify=False)
-if resp.status_code != 200:
-    # This means something went wrong.
-	if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+	### REQUESTING TOKEN FOR AUTHENTICATION (with username/password)
+
+	print("Authenticating with username/password...")
+	task = {"username":constants.RAINIER_USERNAME,"password":constants.RAINIER_PASSWORD}
+	resp = requests.post(constants.RAINIER_BASEURL+'/iam/auth/token', 
+		json=task, 
+		verify=False)
+	if resp.status_code != 200:
+    	# This means something went wrong.
+		if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+
+	else:
+
+		print('Request returned ' , resp.status_code, ' ', resp.reason)
+		resp_json = resp.json()
+		if debug: print(resp_json)
+    
+		access_token = resp.json()['access_token']
 
 else:
 
-	print('Request returned ' , resp.status_code, ' ', resp.reason)
-	resp_json = resp.json()
-	if debug: print(resp_json)
+	### REQUESTING TOKEN FOR AUTHENTICATION (with API KEY)
+
+	print("Authenticating with API Key...")
+	headers = {'content-type': 'application/json'}
+	# Organization name and API key name both in lowercase format
+	task = {'grant_type': 'client_credentials',
+			'client_id': "%s->%s" % (constants.RAINIER_ORG_NAME.lower(), constants.RAINIER_API_KEY_NAME.lower()),
+			'client_secret': constants.RAINIER_API_KEY_SECRET}
+	resp = requests.post(constants.RAINIER_BASEURL+'/iam/auth/token', 
+		json=task, 
+		headers=headers,
+		verify=False)
+	if resp.status_code != 200:
+    	# This means something went wrong.
+		if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+
+	else:
+
+		print('Request returned ' , resp.status_code, ' ', resp.reason)
+		resp_json = resp.json()
     
-	access_token = resp.json()['access_token']
+		access_token = resp.json()['access_token']
 
-print("Authenticating with API Key...")
-headers = {'content-type': 'application/json'}
-# Organization name and API key name both in lowercase format
-task = {'grant_type': 'client_credentials',
-		'client_id': "%s->%s" % (constants.RAINIER_ORG_NAME.lower(), constants.RAINIER_API_KEY_NAME.lower()),
-		'client_secret': constants.RAINIER_API_KEY_SECRET}
-if debug: print(task)
-resp = requests.post(constants.RAINIER_BASEURL+'/iam/auth/token', 
-	json=task, 
-	headers=headers,
-	verify=False)
-if resp.status_code != 200:
-    # This means something went wrong.
-	if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
-
-else:
-
-	print('Request returned ' , resp.status_code, ' ', resp.reason)
-	resp_json = resp.json()
-	if debug: print(resp_json)
-    
-	access_token = resp.json()['access_token']
+### STOP HERE IF NO ACCESS TOKEN (BOTH AUTH FAILED)
 
 try:
   access_token
@@ -58,6 +65,7 @@ except NameError:
 	exit(1)
 
 ### GETTING ALL TENANTS AND ROLES FOR THIS USER
+### This won't work when using API key
 
 print("Requesting tenants list and roles...")
 headers = {
@@ -89,32 +97,6 @@ headers = {
 	"Authorization" : "Bearer " + access_token, 
 	"x-access-token" : access_token,
 	"x-tenant-id": constants.RAINIER_TENANTID}
-	
-resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices',
-	headers=headers,
-	verify=False)
-if resp.status_code != 200:
-    # This means something went wrong.
-	print('**ERROR** ' , resp.status_code, ' ', resp.reason)
-	exit(1)
-
-else:
-
-	if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
-	
-	if debug: print(resp.json())
-
-	for z in resp.json()['results']:
-		print(z['name'],' ',z['status'])
-
-
-### GETTING ALL DEVICES FOR CURRENT TENANT
-
-print("Requesting device list for current tenant...")
-headers = {
-	"Content-Type" : "application/json",
-	"Authorization" : "Bearer " + access_token, 
-	"x-access-token" : access_token}
 	
 resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices',
 	headers=headers,
