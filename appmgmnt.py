@@ -27,7 +27,7 @@ if (not use_API_Key):
 
 		print('Request returned ' , resp.status_code, ' ', resp.reason)
 		resp_json = resp.json()
-		if debug: print(resp_json)
+		#if debug: print(resp_json)
     
 		access_token = resp.json()['access_token']
 
@@ -37,6 +37,7 @@ else:
 
 	print("Authenticating with API Key...")
 	headers = {'content-type': 'application/json'}
+
 	# Organization name and API key name both in lowercase format
 	task = {'grant_type': 'client_credentials',
 			'client_id': "%s->%s" % (constants.RAINIER_ORG_NAME.lower(), constants.RAINIER_API_KEY_NAME.lower()),
@@ -64,54 +65,55 @@ except NameError:
 	print("Can't get access token, stopping here.")
 	exit(1)
 
-### GETTING ALL TENANTS AND ROLES FOR THIS USER
-### This won't work when using API key
-
-print("Requesting tenants list and roles...")
-headers = {
-	"Content-Type" : "application/json",
-	"Authorization" : "Bearer " + access_token, 
-	"x-access-token" : access_token}
-if debug: print(headers)
-resp = requests.get(constants.RAINIER_BASEURL+'/iam/users/me',
-	headers=headers,
-	verify=False)
-
-if resp.status_code != 200:
-    # This means something went wrong.
-	print('**ERROR** ' , resp.status_code, ' ', resp.reason)
-
-else:
-	if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
-	
-	if debug: print(resp.json())
-
-	for z in resp.json()['roles']:
-		print(z['tenant_name'], ' ', z['tenant_id'], ' ', z['role_name'])
-
-### GETTING ALL DEVICES FOR A SPECIFIC TENANT
-
-print("Requesting device list for tenant ID %s..." % constants.RAINIER_TENANTID)
+print("Requesting app management device list for tenant ID %s..." % constants.RAINIER_TENANTID)
 headers = {
 	"Content-Type" : "application/json",
 	"Authorization" : "Bearer " + access_token, 
 	"x-access-token" : access_token,
 	"x-tenant-id": constants.RAINIER_TENANTID}
+
+output = []
+next = str('offset=0&limit=10')
 	
-resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices',
-	headers=headers,
-	verify=False)
-if resp.status_code != 200:
-    # This means something went wrong.
-	print('**ERROR** ' , resp.status_code, ' ', resp.reason)
-	exit(1)
+while True:
+	resp = requests.get(constants.RAINIER_BASEURL+'/appmgmt/devices?'+next,
+	headers=headers,verify=False)
+	if resp.status_code != 200:
+    		# This means something went wrong.
+    		print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+    		exit(1)
 
-else:
+	else:
+		if debug: print(resp.json())
+		output.extend(resp.json()['data'])
+		if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
+		if 'next' in resp.json():
+			next = resp.json()['next'].split('?',1)[1]
+			print(next)
+		else:
+			break
 
-	if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
-	
-	if debug: print(resp.json())
+template = "{:<15} | {:<15} | {:<15}"
+devices_ok = ""
+devices_unreach = ""
+devices_with_errors = ""
 
-	for z in resp.json()['results']:
-		#print(z['name'],' ',z['status'])
-		print(z)
+for z in output:
+	if z['status'] == "DISCOVERED":
+	    devices_ok = devices_ok + str(template.format(z['userProvidedSerialNumber'], z['status'], ""))+'\n'
+	    continue
+	if (('errorMessage' in z) and (z['errorMessage'] == "Device unreachable : null")):
+	    devices_unreach = devices_unreach + str(template.format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+	    continue
+    
+	devices_with_errors = devices_with_errors + str(template.format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+
+print("")
+print("-[ OK ]------------------------------")
+print(devices_ok)
+
+print("-[ UNREACHABLE ----------------------")
+print(devices_unreach)
+   	
+print("-[ ERRORS ]--------------------------")
+print(devices_with_errors)
