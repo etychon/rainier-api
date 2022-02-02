@@ -109,29 +109,33 @@ while True:
     		exit(1)
 
 	else:
-		if debug: print(resp.json())
+		#if debug: print(resp.json())
 		output.extend(resp.json()['data'])
-		if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
+		print(".", end='')
+		#if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
 		if 'next' in resp.json():
 			next = resp.json()['next'].split('?',1)[1]
-			print(next)
 		else:
 			break
 
-template = "{:<15} | {:<15} | {:<15}"
 devices_ok = ""
 devices_unreach = ""
 devices_with_errors = ""
 
 for z in output:
 	if z['status'] == "DISCOVERED":
-	    devices_ok = devices_ok + str(template.format(z['userProvidedSerialNumber'], z['status'], ""))+'\n'
+	    apps = []
+	    #print(json.dumps(z['tags'], indent=2))
+	    for zz in z['tags']:
+	    	if not zz['name'].startswith("Group=") and not zz['name'].startswith("Type="):
+	    		apps.append(zz['name'])
+	    devices_ok = devices_ok + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)))+'\n'
 	    continue
 	if (('errorMessage' in z) and (z['errorMessage'] == "Device unreachable : null")):
-	    devices_unreach = devices_unreach + str(template.format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+	    devices_unreach = devices_unreach + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
 	    continue
     
-	devices_with_errors = devices_with_errors + str(template.format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+	devices_with_errors = devices_with_errors + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
 
 	# Let's refresh devices with errors
 	refresh_iox_device(z['deviceId'])
