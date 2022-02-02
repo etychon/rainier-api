@@ -10,6 +10,31 @@ use_API_Key = False
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+
+def refresh_iox_device(devId):
+	print("Refreshing " + devId)
+
+	headers = {
+        	"Content-Type" : "application/json",
+        	"Authorization" : "Bearer " + access_token,
+        	"X-Tenant-ID": constants.RAINIER_TENANTID}
+
+	myobj = '{"actionType": "RefreshInventory"}'
+	print(myobj)
+
+	resp = requests.post(constants.RAINIER_BASEURL+'/appmgmt/devices/'+devId+'/action',
+        	headers=headers,verify=False, data = myobj)
+
+	#print(resp.request.url)
+	#print(resp.request.headers)
+	#print(resp.request.body)
+
+	if resp.status_code != 200:
+        # This means something went wrong.
+        	if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+	else:
+		print('Request returned ' , resp.status_code, ' ', resp.reason)
+
 if (not use_API_Key):
 
 	### REQUESTING TOKEN FOR AUTHENTICATION (with username/password)
@@ -107,6 +132,9 @@ for z in output:
 	    continue
     
 	devices_with_errors = devices_with_errors + str(template.format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+
+	# Let's refresh devices with errors
+	refresh_iox_device(z['deviceId'])
 
 print("")
 print("-[ OK ]------------------------------")
