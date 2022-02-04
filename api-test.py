@@ -147,4 +147,4 @@ print(out)
 print("*** total "+str(len(out))+" devices ***")
 
 for z in out:
-	print("-> " + str(z['name']))
+	print("-> {} | {} [coords:{},{}]".format(str(z['name']), str(z['status']), z['lat'], z['lng']))
