@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+### TODO
+### Add ability to download IOx tech-support logs for gateways in error
+### Add ability to cross-check GOS / IOS / HV version and identify mismatch (IR8x9 only)
+
 import argparse
 import requests, json
 import constants

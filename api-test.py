@@ -8,6 +8,9 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 debug = True 
 use_API_Key = False
 
+# limit all queries to 50 devices
+limit = 20
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 if (not use_API_Key):
@@ -97,21 +100,51 @@ headers = {
 	"Authorization" : "Bearer " + access_token, 
 	"x-access-token" : access_token,
 	"x-tenant-id": constants.RAINIER_TENANTID}
+
+
+## Get all devices, returns a list
+def get_all_devices():
+
+	devices = []
+
+	page = 0
+	size = 100
+
+	while True:
 	
-resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices',
-	headers=headers,
-	verify=False)
-if resp.status_code != 200:
-    # This means something went wrong.
-	print('**ERROR** ' , resp.status_code, ' ', resp.reason)
-	exit(1)
+		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?page='+str(page)+
+			'&size='+str(size),headers=headers,verify=False)
+		if resp.status_code != 200:
+  			# This means something went wrong.
+  			print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+  			exit(1)
+		else:
+			# 'total': 596, 'size': 20, 'page': 1
+			# output.extend(response['data']['gate_ways'])
+			#   pages = response['data']['paging']['pages']
+			#    if offset < (pages * limit):
+			#        offset = offset + limit
+			#    else:
+			#        break
 
-else:
+			r = resp.json()
+			devices = devices + r['results']
 
-	if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
-	
-	if debug: print(resp.json())
+			if debug: print(r)
 
-	for z in resp.json()['results']:
-		#print(z['name'],' ',z['status'])
-		print(z)
+			page = page + 1
+			if (page*size > min(int(r['total']),limit)):
+				break;
+
+	return(devices)
+
+out = get_all_devices()
+
+print('out = get_all_devices()')
+
+print(out)
+
+print("*** total "+str(len(out))+" devices ***")
+
+for z in out:
+	print("-> " + str(z['name']))
