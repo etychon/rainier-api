@@ -8,8 +8,8 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 debug = True 
 use_API_Key = False
 
-# limit all queries to 50 devices
-limit = 20
+# limit all queries to a fixed # of devices (handy when developing)
+limit = 1000
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -92,25 +92,22 @@ else:
 	for z in resp.json()['roles']:
 		print(z['tenant_name'], ' ', z['tenant_id'], ' ', z['role_name'])
 
-### GETTING ALL DEVICES FOR A SPECIFIC TENANT
-
-print("Requesting device list for tenant ID %s..." % constants.RAINIER_TENANTID)
-headers = {
-	"Content-Type" : "application/json",
-	"Authorization" : "Bearer " + access_token, 
-	"x-access-token" : access_token,
-	"x-tenant-id": constants.RAINIER_TENANTID}
-
-
 ## Get all devices, returns a list
 def get_all_devices():
 
 	devices = []
 
-	page = 0
+	page = 1
 	size = 100
 
-	while True:
+	print("Requesting device list for tenant ID %s..." % constants.RAINIER_TENANTID)
+	headers = {
+		"Content-Type" : "application/json",
+		"Authorization" : "Bearer " + access_token,
+		"x-access-token" : access_token,
+		"x-tenant-id": constants.RAINIER_TENANTID}
+
+	while size > 0:
 	
 		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?page='+str(page)+
 			'&size='+str(size),headers=headers,verify=False)
@@ -119,30 +116,26 @@ def get_all_devices():
   			print('**ERROR** ' , resp.status_code, ' ', resp.reason)
   			exit(1)
 		else:
-			# 'total': 596, 'size': 20, 'page': 1
-			# output.extend(response['data']['gate_ways'])
-			#   pages = response['data']['paging']['pages']
-			#    if offset < (pages * limit):
-			#        offset = offset + limit
-			#    else:
-			#        break
 
 			r = resp.json()
 			devices = devices + r['results']
+			total = int(r['total'])
+			received = len(r['results'])
 
-			if debug: print(r)
+			if debug:
+				# print("Progress ({}-{}/{}): got {} entries".format((page-1)*size,(page*size)-1,total,received)) 
+				print(" {} % ... ".format(min(100,round((page*size*100)/total))), end = '', flush=True)
+				#print(r)
+
+			if received < size:
+				# that was the last page
+				break
 
 			page = page + 1
-			if (page*size > min(int(r['total']),limit)):
-				break;
 
 	return(devices)
 
 out = get_all_devices()
-
-print('out = get_all_devices()')
-
-print(out)
 
 print("*** total "+str(len(out))+" devices ***")
 
