@@ -23,6 +23,8 @@ if debug: print("[INFO] verbose output is enabled")
 # don't warn if HTTPS connections are not valid
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+# Load current tenant credentials
+constants.load_tenant_creds(constants.tenant_name)
 
 def refresh_iox_device(devId):
 

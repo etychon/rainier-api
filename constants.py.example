@@ -1,9 +1,50 @@
-RAINIER_BASEURL = "https://rainierbts2.ciscoiotdev.io"
-RAINIER_USERNAME = "name@cisco.com"
-RAINIER_PASSWORD = "xxpasswordxx"
-RAINIER_TENANTID = "61685eca-24ce-4cfb-9828-56c644cecb3c"
-# Only relevant when using API keys
-RAINIER_ORG_NAME = "Technical Marketing Engineers"
-RAINIER_API_KEY_NAME = "etychon"
-RAINIER_API_KEY_SECRET = "***REMOVED***"
+
+### This file defines constants to access IoT OD API
+### You can define different tenants here, with unique
+### identification credentials and different clusters.
+
+# This is a defaut Tenant nick name, pick your own
+tenant_name = "CAT"
+
+# initialize default globals - leave that empty 
+RAINIER_BASEURL = ""
+RAINIER_USERNAME = ""
+RAINIER_PASSWORD = ""
+RAINIER_TENANTID = ""
+RAINIER_ORG_NAME = ""
+RAINIER_API_KEY_NAME = ""
+RAINIER_API_KEY_SECRET = ""
+
+# The function uses the tenenant nick name to load the
+# right credentials and cluster name
+def load_tenant_creds(t_name):
+
+  global RAINIER_BASEURL
+  global RAINIER_USERNAME
+  global RAINIER_PASSWORD
+  global RAINIER_TENANTID
+  global RAINIER_ORG_NAME
+  global RAINIER_API_KEY_NAME
+  global RAINIER_API_KEY_SECRET
+
+  if t_name == "ACME_1_EU":
+    ### ACME company 1 on EU cluster
+    RAINIER_BASEURL = "https://eu.ciscoiot.com"
+    RAINIER_USERNAME = "user@mail.com"
+    RAINIER_PASSWORD = "secret"
+    RAINIER_TENANTID = "8b591a0b-15f5-45f2-8586-bf2524a9e5b6"
+
+  if t_name == "ACME_2_US":
+    ### ACME company 2 on US cluster
+    RAINIER_BASEURL = "https://us.ciscoiot.com"
+    RAINIER_USERNAME = "other@user.com"
+    RAINIER_PASSWORD = "supersecret"
+    RAINIER_TENANTID = "44a84a86-dca4-4a37-8a84-1a47eb0f5ee6"
+
+  if t_name == 'ACME_3_API':
+    # ACME company 3 using API Keys
+    RAINIER_BASEURL = "https://us.ciscoiot.com"
+    RAINIER_ORG_NAME = "ACME_3"
+    RAINIER_API_KEY_NAME = "keyname"
+    RAINIER_API_KEY_SECRET = "apisecret"
 

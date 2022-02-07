@@ -13,6 +13,11 @@ limit = 1000
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+# Load current tenant credentials
+constants.load_tenant_creds(constants.tenant_name)
+
+print("tenant = {}, url = {}".format(constants.tenant_name, constants.RAINIER_BASEURL))
+
 if (not use_API_Key):
 
 	### REQUESTING TOKEN FOR AUTHENTICATION (with username/password)
