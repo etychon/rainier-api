@@ -12,6 +12,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 parser = argparse.ArgumentParser(prog='PROG', description='Process IoT OD gateways with application management.')
 parser.add_argument('--refresh', '-r', choices=['error', 'null', 'all'], help='refresh application management on gateways with errors, null or all')
 parser.add_argument('--verbose', '-v', help='verbose output', action='store_true')
+parser.add_argument('--tenant', '-t', help='tenant nickname as defined in constants.py')
 args = parser.parse_args()
 
 # constants
@@ -23,8 +24,14 @@ if debug: print("[INFO] verbose output is enabled")
 # don't warn if HTTPS connections are not valid
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
+# Read tenant nick name from CLI args if provided
+if args.tenant:
+    constants.tenant_name = args.tenant
+
 # Load current tenant credentials
 constants.load_tenant_creds(constants.tenant_name)
+
+print("tenant = {}, url = {}".format(constants.tenant_name, constants.RAINIER_BASEURL))
 
 def refresh_iox_device(devId):
 
@@ -126,7 +133,7 @@ while True:
 	else:
 		if debug: print(json.dumps(resp.json(), indent=2))
 		output.extend(resp.json()['data'])
-		print(".", end='')
+		print(".", end='', flush = True)
 		if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
 		if 'next' in resp.json():
 			next = resp.json()['next'].split('?',1)[1]
@@ -148,31 +155,31 @@ for z in output:
 	    for zz in z['tags']:
 	    	if not zz['name'].startswith("Group=") and not zz['name'].startswith("Type="):
 	    		apps.append(zz['name'])
-	    devices_ok = devices_ok + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)))+'\n'
+	    devices_ok = devices_ok + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)))+'\n'
 	    if args.refresh == "all" : 
 	    	print(".", end='')
 	    	refresh_iox_device(z['deviceId']) 
 	    continue
 	if (('errorMessage' in z) and (z['errorMessage'] == "Device unreachable : null")):
-	    devices_unreach = devices_unreach + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+	    devices_unreach = devices_unreach + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
 	    if args.refresh == "all" or args.refresh == "null": 
 	        print(".", end='')                                                                                                                                                   
 	        refresh_iox_device(z['deviceId'])
 	    continue
     
-	devices_with_errors = devices_with_errors + str("{:<20} | {:<15} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+	devices_with_errors = devices_with_errors + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
 
 	if args.refresh == "all" or args.refresh == "error":
 		print(".", end='')
 		refresh_iox_device(z['deviceId'])
 
 print("")
-print("-[ OK ]------------------------------")
+print("-[ OK: {} ]------------------------------".format(devices_ok.count('\n')))
 print(devices_ok)
 
-print("-[ UNREACHABLE ----------------------")
+print("-[ UNREACHABLE : {} ]----------------------".format(devices_unreach.count('\n')))
 print(devices_unreach)
    	
-print("-[ ERRORS ]--------------------------")
+print("-[ ERROR: {} ]--------------------------".format(devices_with_errors.count('\n')))
 print(devices_with_errors)
 

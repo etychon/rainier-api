@@ -2,7 +2,14 @@
 
 import requests, json
 import constants
+import argparse
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+
+parser = argparse.ArgumentParser(prog='PROG', description='Process IoT OD gateways with Edge Device Manager API')
+parser.add_argument('--verbose', '-v', help='verbose output', action='store_true')
+parser.add_argument('--tenant', '-t', help='tenant nickname as defined in constants.py')
+args = parser.parse_args()
 
 # constants
 debug = True 
@@ -12,6 +19,10 @@ use_API_Key = False
 limit = 1000
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+# Read tenant nick name from CLI args if provided
+if args.tenant:
+	constants.tenant_name = args.tenant
 
 # Load current tenant credentials
 constants.load_tenant_creds(constants.tenant_name)
