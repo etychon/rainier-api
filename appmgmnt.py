@@ -34,18 +34,27 @@ constants.load_tenant_creds(constants.tenant_name)
 
 print("tenant = {}, url = {}".format(constants.tenant_name, constants.RAINIER_BASEURL))
 
+# Refresh app management for this device (str) or devices (list)
 def refresh_iox_device(devId):
 
-	if debug: print("Refreshing device "+devId)
+	devList = []
+
+	if isinstance(devId, str):
+		devList.append(devId)
+
+	if isinstance(devId, list):
+		devList.extend(devId)
+
+	if debug: print("Refreshing device " + json.dumps(devList))
 
 	headers = {
         	"Content-Type" : "application/json",
         	"Authorization" : "Bearer " + access_token,
         	"X-Tenant-ID": constants.RAINIER_TENANTID}
 
-	myobj = '{"actionType": "RefreshInventory"}'
+	myobj = '{"actionType": "RefreshInventory", "devices" : ' + json.dumps(devList) + '}'
 
-	resp = requests.post(constants.RAINIER_BASEURL+'/appmgmt/devices/'+devId+'/action',
+	resp = requests.post(constants.RAINIER_BASEURL+'/appmgmt/devices/action',
         	headers=headers,verify=False, data = myobj)
 
 	#print(resp.request.url)
@@ -57,12 +66,6 @@ def refresh_iox_device(devId):
         	if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
 	else:
 		if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
-
-def do_dev_refresh_print(devId):
-    print(" refreshing...", end='', flush = True)
-    refresh_iox_device(devId)
-    print(" done.", end='', flush = True)
-
 
 if (not use_API_Key):
 
@@ -166,6 +169,7 @@ for z in output:
 
 # Process OK devices
 print("\n-[ OK: {} ]------------------------------".format(len(devices_ok)))
+refresh_devId = []
 for z in devices_ok:
 	apps = []
     # print(json.dumps(z, indent=2))
@@ -174,7 +178,8 @@ for z in devices_ok:
 		apps.append(zz['name'] + "("+zz['status']+")")
 	print("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)), end='', flush = True)
 	if args.refresh == "all" :
-		do_dev_refresh_print(z['deviceId'])
+		refresh_devId.append(z['deviceId'])
+		print(' [refresh]', end='', flush = True)
 	print('')
 
 # Process unreachable devices
@@ -182,7 +187,8 @@ print("\n-[ UNREACHABLE: {} ]------------------------------".format(len(devices_
 for z in devices_unreach:
 	print(("{:<25.25} | {:<21.21} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])), end='', flush = True)
 	if args.refresh == "all" or args.refresh == "null":
-		do_dev_refresh_print(z['deviceId'])
+		refresh_devId.append(z['deviceId'])
+		print(' [refresh]', end='', flush = True)
 	print('')
 
 # Process devices with error
@@ -190,8 +196,13 @@ print("\n-[ ERROR: {} ]--------------------------".format(len(devices_with_error
 for z in devices_with_errors:
 	print(("{:<25.25} | {:<21.21} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])), end='', flush = True)
 	if args.refresh == "all" or args.refresh == "error":
-		do_dev_refresh_print(z['deviceId'])
+		refresh_devId.append(z['deviceId'])
+		print(' [refresh]', end='', flush = True)
 	print('')
 
-sys.exit("\ndone")
+if len(refresh_devId) > 0:
+	print('\nRefreshing {} apps... '.format(len(refresh_devId)))
+	refresh_iox_device(refresh_devId)
+	print('done.')
 
+print("\ndone.")
