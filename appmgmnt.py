@@ -7,6 +7,7 @@
 import argparse
 import requests, json
 import constants
+import sys
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 parser = argparse.ArgumentParser(prog='PROG', description='Process IoT OD gateways with application management.')
@@ -56,6 +57,12 @@ def refresh_iox_device(devId):
         	if debug: print('**ERROR** ' , resp.status_code, ' ', resp.reason)
 	else:
 		if debug: print('Request returned ' , resp.status_code, ' ', resp.reason)
+
+def do_dev_refresh_print(devId):
+    print(" refreshing...", end='', flush = True)
+    refresh_iox_device(devId)
+    print(" done.", end='', flush = True)
+
 
 if (not use_API_Key):
 
@@ -121,9 +128,11 @@ headers = {
 
 output = []
 next = str('offset=0&limit=10')
+
+print("Getting device list", end='', flush = True)
 	
 while True:
-	resp = requests.get(constants.RAINIER_BASEURL+'/appmgmt/devices?'+next,
+	resp = requests.get(constants.RAINIER_BASEURL+'/appmgmt/devices?detail=app&'+next,
 	headers=headers,verify=False)
 	if resp.status_code != 200:
     		# This means something went wrong.
@@ -141,45 +150,48 @@ while True:
 			break
 
 # Initialize lists of devices (strings)
-devices_ok = ""
-devices_unreach = ""
-devices_with_errors = ""
+devices_ok = []
+devices_unreach = []
+devices_with_errors = []
 
-if args.refresh == "all" or args.refresh == "null" or args.refresh == "error": 
-	print("[INFO] Refreshing devices: ")
-
+# Let's go through all devices in 'output' and classify them in 3 lists
 for z in output:
 	if z['status'] == "DISCOVERED":
-	    apps = []
-	    #print(json.dumps(z['tags'], indent=2))
-	    for zz in z['tags']:
-	    	if not zz['name'].startswith("Group=") and not zz['name'].startswith("Type="):
-	    		apps.append(zz['name'])
-	    devices_ok = devices_ok + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)))+'\n'
-	    if args.refresh == "all" : 
-	    	print(".", end='')
-	    	refresh_iox_device(z['deviceId']) 
-	    continue
+		devices_ok.append(z)
+		continue
 	if (('errorMessage' in z) and (z['errorMessage'] == "Device unreachable : null")):
-	    devices_unreach = devices_unreach + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
-	    if args.refresh == "all" or args.refresh == "null": 
-	        print(".", end='')                                                                                                                                                   
-	        refresh_iox_device(z['deviceId'])
-	    continue
-    
-	devices_with_errors = devices_with_errors + str("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])) + '\n'
+		devices_unreach.append(z)
+		continue
+	devices_with_errors.append(z)	
 
+# Process OK devices
+print("\n-[ OK: {} ]------------------------------".format(len(devices_ok)))
+for z in devices_ok:
+	apps = []
+    # print(json.dumps(z, indent=2))
+	for zz in z['apps']:
+		#if not zz['name'].startswith("Group=") and not zz['name'].startswith("Type="):
+		apps.append(zz['name'] + "("+zz['status']+")")
+	print("{:<25.25} | {:<13.13} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], str(apps)), end='', flush = True)
+	if args.refresh == "all" :
+		do_dev_refresh_print(z['deviceId'])
+	print('')
+
+# Process unreachable devices
+print("\n-[ UNREACHABLE: {} ]------------------------------".format(len(devices_unreach)))
+for z in devices_unreach:
+	print(("{:<25.25} | {:<21.21} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])), end='', flush = True)
+	if args.refresh == "all" or args.refresh == "null":
+		do_dev_refresh_print(z['deviceId'])
+	print('')
+
+# Process devices with error
+print("\n-[ ERROR: {} ]--------------------------".format(len(devices_with_errors)))
+for z in devices_with_errors:
+	print(("{:<25.25} | {:<21.21} | {:<15}".format(z['userProvidedSerialNumber'], z['status'], z['errorMessage'])), end='', flush = True)
 	if args.refresh == "all" or args.refresh == "error":
-		print(".", end='')
-		refresh_iox_device(z['deviceId'])
+		do_dev_refresh_print(z['deviceId'])
+	print('')
 
-print("")
-print("-[ OK: {} ]------------------------------".format(devices_ok.count('\n')))
-print(devices_ok)
-
-print("-[ UNREACHABLE : {} ]----------------------".format(devices_unreach.count('\n')))
-print(devices_unreach)
-   	
-print("-[ ERROR: {} ]--------------------------".format(devices_with_errors.count('\n')))
-print(devices_with_errors)
+sys.exit("\ndone")
 
