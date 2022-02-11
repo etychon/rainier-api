@@ -1,7 +1,9 @@
 # rainier-api
-Sample programs to demonstrate how to use Cisco IoT Operations Dashboard (IoT OD) APIs. This is a work in progress and an individual contribution. 
+Sample programs to demonstrate how to use Cisco IoT Operations Dashboard (IoT OD) APIs. 
 
-At this time there is no official API documentation - this is a work in progress.
+At this time there is no official API documentation.
+This is a work in progress and an individual contribution and APIs are
+currently not supported by Cisco. 
 
 # How to use? 
 
@@ -16,7 +18,36 @@ If you are using an API key instead of username/password:
 * `RAINIER_API_KEY_NAME` is the name of your API key as defined in IoT OD
 * `RAINIER_API_KEY_SECRET` if the secret generate when the API key was created. If you misplaced it, you need to generate a new key.
 
+You can also customize the `constants.py` to include credentials for
+multiple tenants on multiple clusters. This will allow to call the scripts
+using just the tenenat name.
+
+# Pagination
+
+All IoT OD APIs are using pagination to deal with thousands of entries, it
+is better to run 10 queries for 100 devices each rather than one query for
+1000 devices. 
+
+Pagination method used in EDM if different than the pagination method used
+for application management. Please see the examples below on how use them.
+
+# Using the Device Management API
+
+This API can be used to manage gateways in IoT OD, such as checking gateway
+status, IOS release and other details. This script show how to use
+API pagination in EDM API.
+
 Simply run the sample program with:
 
-`python3 api-test.py`
+`python3 ./api-test.py`
 
+# Using the Application Management API
+
+The application management API allows to collect information on IOx
+applications running on gateways. This gateway supports pagination on
+Application management API.
+
+For example one can list all applications installed on all gateways with
+their operational status with:
+
+`python3 ./appmgmnt.py`
