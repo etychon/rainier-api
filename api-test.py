@@ -9,6 +9,7 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 parser = argparse.ArgumentParser(prog='PROG', description='Process IoT OD gateways with Edge Device Manager API')
 parser.add_argument('--verbose', '-v', help='verbose output', action='store_true')
 parser.add_argument('--tenant', '-t', help='tenant nickname as defined in constants.py')
+parser.add_argument('--push', '-p', help='push config on this device')
 args = parser.parse_args()
 
 # constants
@@ -151,9 +152,50 @@ def get_all_devices():
 
 	return(devices)
 
+
+## Push config on one device - take one eid and deviceType
+## deviceType is case sensitive (ir800 and not IR800)
+def push_config(eid, deviceType):
+
+	headers = {
+		"Content-Type" : "application/json",
+        "Authorization" : "Bearer " + access_token,
+        # "x-access-token" : access_token,
+        "x-tenant-id": constants.RAINIER_TENANTID}          
+
+	myobj = '[{"eid": "' + eid + '","fields":{"deviceType":"' +deviceType+ '"}}]'
+	print(myobj)
+
+	resp = requests.post(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices/config?operationType=PUSH',
+	headers=headers,verify=False, data=myobj)
+
+	if resp.status_code != 200:
+		# This means something went wrong.
+		print('**ERROR** ' , resp.status_code, ' ', resp.reason)
+		print('It could be that a config push is already in progress')
+		exit(1)
+	else:
+		print(resp)
+	
+	return(0)
+
+
 out = get_all_devices()
 
 print("*** total "+str(len(out))+" devices ***")
 
 for z in out:
 	print("-> {} | {} [coords:{},{}]".format(str(z['name']), str(z['status']), z['lat'], z['lng']))
+
+if args.push:
+	print("Pushing config on device name: {}".format(args.push))
+	# Push API needs both "eid" and "deviceType", got get them
+	for z in out:
+		if (args.push == z['name']):
+			print("found device to push config: eid = {}, deviceType= {}".format(z['eid'], z['deviceType']))
+			if z['status'] == "configuring":
+				print("A config push is already in progress, not pushing config.")
+			else:
+				print("Pushing config on {}".format(z['name']))
+				push_config(z['eid'], z['deviceType'].lower())
+  
