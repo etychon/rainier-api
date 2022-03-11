@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(prog='PROG', description='Process IoT OD gatewa
 parser.add_argument('--verbose', '-v', help='verbose output', action='store_true')
 parser.add_argument('--tenant', '-t', help='tenant nickname as defined in constants.py')
 parser.add_argument('--push', '-p', help='push config on this device')
+parser.add_argument('--delete', help='delete this device')
 args = parser.parse_args()
 
 # constants
@@ -17,7 +18,7 @@ debug = True
 use_API_Key = False
 
 # limit all queries to a fixed # of devices (handy when developing)
-limit = 1000
+limit = 2000
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -115,7 +116,7 @@ def get_all_devices():
 	devices = []
 
 	page = 1
-	size = 100
+	size = 200
 
 	print("Requesting device list for tenant ID %s..." % constants.RAINIER_TENANTID)
 	headers = {
@@ -126,7 +127,7 @@ def get_all_devices():
 
 	while size > 0:
 	
-		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?page='+str(page)+
+		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?sortBy=lastHeard&sortDir=asc&page='+str(page)+
 			'&size='+str(size),headers=headers,verify=False)
 		if resp.status_code != 200:
   			# This means something went wrong.
@@ -140,8 +141,8 @@ def get_all_devices():
 			received = len(r['results'])
 
 			if debug:
-				# print("Progress ({}-{}/{}): got {} entries".format((page-1)*size,(page*size)-1,total,received)) 
-				print(" {} % ... ".format(min(100,round((page*size*100)/total))), end = '', flush=True)
+				print("Progress page {}, size {}, ({}-{}/{}): got {} entries".format(page,size,(page-1)*size,(page*size)-1,total,received)) 
+				#print(" {} % ... ".format(min(100,round((page*size*100)/total))), end = '', flush=True)
 				#print(r)
 
 			if received < size:
@@ -179,12 +180,35 @@ def push_config(eid, deviceType):
 	
 	return(0)
 
+def delete_single_device(eid):
+
+	headers = {
+		"Content-Type" : "application/json",
+		"Authorization" : "Bearer " + access_token,
+		# "x-access-token" : access_token,
+		"x-tenant-id": constants.RAINIER_TENANTID}
+
+	myobj = '{"eids": ["' + eid + '"],"rollbackConfig":false}'
+	if args.verbose: print(myobj)
+
+	resp = requests.delete(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices/delete',
+	headers=headers,verify=False, data=myobj)
+
+	if resp.status_code != 200:
+		# This means something went wrong.
+		print('**ERROR** ' , resp.status_code, ' ', resp.reason, ' ', resp.content)
+		return(1)
+	else:
+		print(resp)
+
+	return(0)
 
 out = get_all_devices()
 
 print("*** total "+str(len(out))+" devices ***")
 
 for z in out:
+	if args.verbose: print(z)
 	print("-> {} | {} [coords:{},{}]".format(str(z['name']), str(z['status']), z['lat'], z['lng']))
 
 if args.push:
@@ -198,4 +222,11 @@ if args.push:
 			else:
 				print("Pushing config on {}".format(z['name']))
 				push_config(z['eid'], z['deviceType'].lower())
-  
+
+if args.delete:
+	print("Deleting device name: {}".format(args.delete))
+	for z in out:
+		if (args.delete == z['name']):
+			print("found device to delete: eid = {}, deviceType= {}".format(z['eid'], z['deviceType']))
+			delete_single_device(z['eid'])
+
