@@ -1,11 +1,22 @@
 # rainier-api
-Sample programs to demonstrate how to use Cisco IoT Operations Dashboard (IoT OD) APIs. 
+Sample scripts to demonstrate how to use Cisco IoT Operations Dashboard (IoT OD) APIs. 
 
 At this time there is no official API documentation.
-This is a work in progress and an individual contribution and APIs are
-currently not supported by Cisco. 
+This is a work in progress and an individual contribution as Cisco IoT Operations Dashboard APIs are currently not supported by Cisco. 
+
+# Download the code
+
+Clone this repository on your computer:
+
+```
+git clone git@github.com:etychon/rainier-api.git
+cd rainier-api/
+```
 
 # How to use? 
+
+Those scripts will require credentials and cluster details to work. I have provided an example of such a file in `constants.py.example`.
+This one file can be used to hold credentials for mutliple organisations, users, or clusters. 
 
 You need to rename `constants.py.example` to `constants.py` and add your own variables such as:
 * `RAINIER_USERNAME` is your username
