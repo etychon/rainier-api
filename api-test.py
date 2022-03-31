@@ -116,7 +116,7 @@ def get_all_devices():
 	devices = []
 
 	page = 1
-	size = 200
+	size = 200 # IoT OD has a maximum of 200 items per API call
 
 	print("Requesting device list for tenant ID %s..." % constants.RAINIER_TENANTID)
 	headers = {
@@ -127,7 +127,9 @@ def get_all_devices():
 
 	while size > 0:
 	
-		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?sortBy=lastHeard&sortDir=asc&page='+str(page)+
+		# It is important to use "sortBy=eid" otherwise the content of a "page" is unpredictable
+		# You miss some gateway, and have some duplicates
+		resp = requests.get(constants.RAINIER_BASEURL+'/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page='+str(page)+
 			'&size='+str(size),headers=headers,verify=False)
 		if resp.status_code != 200:
   			# This means something went wrong.
@@ -203,13 +205,18 @@ def delete_single_device(eid):
 
 	return(0)
 
+# get all devices in this org
 out = get_all_devices()
 
-print("*** total "+str(len(out))+" devices ***")
+# Sort list by device name using lambda function
+out.sort(key=lambda x: x['name'])
 
 for z in out:
 	if args.verbose: print(z)
 	print("-> {} | {} [coords:{},{}]".format(str(z['name']), str(z['status']), z['lat'], z['lng']))
+
+print("*** total "+str(len(out))+" devices ***")
+
 
 if args.push:
 	print("Pushing config on device name: {}".format(args.push))
@@ -227,6 +234,7 @@ if args.delete:
 	print("Deleting device name: {}".format(args.delete))
 	for z in out:
 		if (args.delete == z['name']):
-			print("found device to delete: eid = {}, deviceType= {}".format(z['eid'], z['deviceType']))
+			print(z)
+			print("found device to delete: eid = {}, deviceType= {}, deviceId = {}".format(z['eid'], z['deviceType'], "zzz"))
 			delete_single_device(z['eid'])
 
