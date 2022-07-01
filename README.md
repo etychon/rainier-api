@@ -110,3 +110,9 @@ For example one can list all applications installed on all gateways with
 their operational status with:
 
 `python3 ./appmgmnt.py`
+
+# Why is this called "Rainier"?
+
+Let's talk about the internal laundry. When we start developing a product we do not know yet what is going to be the customer facing product name, so we always use internal project names early on.
+
+"Rainier" - taking inspiration of the famous Mount Rainier, is the Cisco internal product name for "Cisco IoT Operations Dashboard". Prior to that name it was briefly called "Cisco IoT Operations Center" and you may still see references to "IOTOC" in Cisco Commerce Workplace (the ordering platform).
