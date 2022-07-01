@@ -111,6 +111,45 @@ their operational status with:
 
 `python3 ./appmgmnt.py`
 
+# Using the Rainier library (new)
+
+I have started developping a Python library to improve code re-usability. It is very basic but its a foundation to add more capabilies in the future.
+
+Check this example to see how to use the library:
+
+`rainier-library-test.py`
+
+# Loading credentials
+
+Once the `constants.py` is complete with your credentials you can load them very simply with just a couple of lines, for example to load the credentials for organisation "ACME_4_API" simply do this:
+
+```
+import constants
+constants.load_tenant_creds("ACME_4_API")
+```
+
+# Authentication to IoT OD
+
+Once the constants have been loaded at the previous step, add `rainierlib` module, load and validate the credentials with just a couple line:
+
+```
+import rainierlib.rainierapi
+rl = rainierlib.rainierapi.rainierlib()
+rl.loadTParameters(constants)
+```
+
+That's it. When you instanciate the class in "rl", it will store the credentials, access_token, and will take care of token refresh for you while you focus on what matters.
+
+You should see a message "Autentication OK." if you run this and all is fine.
+
+# Getting the device list
+
+The library will do all the heavy lifting for you, for example you list all the devices and associated parameters with just one line:
+
+```
+print(rl.getAllDevices())
+```
+
 # Why is this called "Rainier"?
 
 Let's talk about the internal laundry. When we start developing a product we do not know yet what is going to be the customer facing product name, so we always use internal project names early on.
