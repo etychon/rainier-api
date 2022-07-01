@@ -16,7 +16,7 @@ args = parser.parse_args()
 if args.tenant:
 	constants.tenant_name = args.tenant
 
-# Load current tenant credentials
+# Load current tenant credentials from constants (see README.md file for how to do this)
 constants.load_tenant_creds(constants.tenant_name)
 
 print("Using tenant = {}, url = {}".format(constants.tenant_name, constants.RAINIER_BASEURL))
@@ -24,9 +24,10 @@ print("Using tenant = {}, url = {}".format(constants.tenant_name, constants.RAIN
 # Instanciate the rainierlib class
 rl = rainierlib.rainierapi.rainierlib()
 
-# Load all parameters for cluster, authentication, username, keys, etc...
+# Load all parameters for cluster, authentication, username, keys, etc... for this tenant
 rl.loadTParameters(constants)
 
+# Get all devices in this tenant
 print(rl.getAllDevices())
 
 print("Done.")
