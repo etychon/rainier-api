@@ -47,4 +47,4 @@ def load_tenant_creds(t_name):
     RAINIER_ORG_NAME = "ACME_3"
     RAINIER_API_KEY_NAME = "keyname"
     RAINIER_API_KEY_SECRET = "apisecret"
-
+    RAINIER_TENANTID = "44a84a86-dca4-4a37-8a84-1a47eb0f5ee6"
