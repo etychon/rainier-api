@@ -42,10 +42,24 @@ rl.loadTParameters(constants)
 #print("Getting all devices in this organisation...")
 #print(rl.getAllDevices())
 
-print("Getting all details of this gateway's SN...")
-print(rl.getDeviceDetails(sn="FCW2424P02X"))
+#print("Getting all details for gateway with SN...")
+#r = rl.getDeviceDetails(sn="FCW2424P02X")
+#if r:
+#    print("Gateway name is " + r['name'])
+#else:
+#    print("Gateway not found ")
 
-print("Getting all details of this gateway's name...")
-print(rl.getDeviceDetails(device_name="egon-ir1101-1"))
+#print("Getting all details of this gateway's name...")
+#print(rl.getDeviceDetails(device_name="egon-ir1101-1"))
+
+#print("Getting all details of non-existent gateway SN...")
+#print(rl.getDeviceDetails(sn="FCWXXXXXX2X"))
+
+print("Getting all details for devices in group...")
+r = rl.getAllDevicesInGroup('etychon-ir1101-ecvd-adv-egon-nocell')
+if r:
+    print("found {} devices".format(len(r)))
+    for z in r:
+        print("{} - {}".format(z['name'], z['SN']))
 
 print("Done.")

@@ -92,6 +92,24 @@ class rainierlib:
             print("Autentication OK.")
             return(0)
 
+    def runRainierQuery(self, type, querystr):
+
+        headers = {"Content-Type": "application/json",
+                   "Authorization": "Bearer " + self.access_token,
+                   "x-access-token": self.access_token,
+                   "x-tenant-id": self.RAINIER_TENANTID}
+
+        resp = requests.get(self.RAINIER_BASEURL+querystr,
+                            headers=headers, verify=False)
+
+        if resp.status_code != 200:
+            # This means something went wrong.
+            if self.DEBUG:
+                print('**ERROR** ', resp.status_code, ' ', resp.reason)
+            exit(1)
+        else:
+            return(resp.json())
+
     def setAPIkey(self, key_name, key_secret, org_name):
         self.RAINIER_API_KEY_NAME = key_name
         self.RAINIER_API_KEY_SECRET = key_secret
@@ -129,11 +147,11 @@ class rainierlib:
                 print("Tenant definition is missing authentication information")
                 exit(1)
 
-    def getAllDevices(self, force_refresh=False):
+    def getAllDevices(self, force_refresh=False, filter=None):
         ## Get all devices, returns a list
 
         # Do we already have cached values and not forcing refresh?
-        if len(self.edm_devices) and not force_refresh:
+        if len(self.edm_devices) and not force_refresh and not filter:
             return(self.edm_devices)
 
         devices = []
@@ -148,52 +166,46 @@ class rainierlib:
                    "x-access-token": self.access_token,
                    "x-tenant-id": self.RAINIER_TENANTID}
 
+        if filter:
+            filter_str = '&filter=  '+filter+'"'
+        else:
+            filter_str = ''
+
         while size > 0:
-            resp = requests.get(self.RAINIER_BASEURL+'/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page='
-                                + str(page) + '&size='+str(size), headers=headers, verify=False)
-            if resp.status_code != 200:
-                # This means something went wrong.
-                print('**ERROR** ', resp.status_code, ' ', resp.reason)
-                exit(1)
+            resp = self.runRainierQuery(
+                'get', '/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page=' + str(page) + '&size='+str(size) + filter_str)
+            if not resp:
+                return(None)
             else:
+                devices = devices + resp['results']
+                total = int(resp['total'])
+                received = len(resp['results'])
 
-                r = resp.json()
-                devices = devices + r['results']
-                total = int(r['total'])
-                received = len(r['results'])
-
-            if self.DEBUG:
-                print("Progress page {}, size {}, ({}-{}/{}): got {} entries".format(page,
-                                                                                     size, (page-1)*size, (page*size)-1, total, received))
+                if self.DEBUG:
+                    print("Progress page {}, size {}, ({}-{}/{}): got {} entries".format(page,
+                                                                                         size, (page-1)*size, (page*size)-1, total, received))
                 #print(" {} % ... ".format(min(100,round((page*size*100)/total))), end = '', flush=True)
                 #print(r)
 
-            if received < size:
-                # that was the last page
-                break
+                if received < size:
+                    # that was the last page
+                    break
 
-            page = page + 1
+                page = page + 1
 
-        self.edm_devices = devices
+                if not filter:
+                    self.edm_devices = devices
+
         return(devices)
 
     # filter based on search string (ie: "name=ir1101-etychon")
     # this can return multiple results depending on the search filter
+    # TODO: Need to add pagination support
     def filterDevices(self, searchString):
 
-        headers = {"Content-Type": "application/json",
-                   "Authorization": "Bearer " + self.access_token,
-                   "x-access-token": self.access_token,
-                   "x-tenant-id": self.RAINIER_TENANTID}
+        resp = self.getAllDevices(filter=searchString)
 
-        resp = requests.get(self.RAINIER_BASEURL+'/resource/rest/api/v1/devices?sortBy=name&sortDir=asc&page=1&size=10&filter=  '
-                            + searchString+'" ', headers=headers, verify=False)
-        if resp.status_code != 200:
-            # This means something went wrong.
-            print('**ERROR** ', resp.status_code, ' ', resp.reason)
-            exit(1)
-        else:
-            return(resp.json())
+        return(resp)
 
     # Finds the _first_ gateway that matches  name or SN, and return that device JSON details
     def getDeviceDetails(self, device_name=None, sn=None):
@@ -206,14 +218,30 @@ class rainierlib:
                 if device_name and zItem['name'] == device_name:
                     return(zItem)
 
+        # If not found in cache or cache is not built
+        # Let's filter specifically for this name using API
         if device_name:
             z = self.filterDevices('name:'+device_name)
-            if (z):
+            try:
                 return(z['results'][0])
+            except:
+                pass
 
+        # filter specifically for this SN
         if sn:
             z = self.filterDevices('SN:'+sn)
-            if (z):
+            try:
                 return(z['results'][0])
+            except:
+                pass
 
-        return(0)
+        return(None)
+
+    def getAllDevicesInGroup(self, group_name):
+
+        s = self.filterDevices("configGroup:"+group_name)
+
+        try:
+            return(s)
+        except:
+            return(None)
