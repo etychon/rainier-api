@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
+from enum import Enum
 import rainierlib.rainierapi
 import constants
+import json
 import argparse
 
 
@@ -55,11 +57,33 @@ rl.loadTParameters(constants)
 #print("Getting all details of non-existent gateway SN...")
 #print(rl.getDeviceDetails(sn="FCWXXXXXX2X"))
 
-print("Getting all details for devices in group...")
-r = rl.getAllDevicesInGroup('etychon-ir1101-ecvd-adv-egon-nocell')
-if r:
-    print("found {} devices".format(len(r)))
-    for z in r:
-        print("{} - {}".format(z['name'], z['SN']))
+#print("Getting all details for devices in group...")
+#r = rl.getAllDevicesInGroup('etychon-ir1101-ecvd-adv-egon-nocell')
+#if r:
+#    print("found {} devices".format(len(r)))
+#    for z in r:
+#        print("{} - {}".format(z['name'], z['SN']))
+#
+#print("Done.")
 
-print("Done.")
+#  add a new device
+r = rl.addNewDevice("IR1101-K9+AB123456788", "deleteme",
+                    "etychon-ir1101-ecvd-adv-egon-nocell")
+
+# Did that request work?
+if r.status_code == 201:
+    print("Adding device done: {}".format(rl.showRainierErrorMessage(r)))
+else:
+    print("Failed :(")
+    print(rl.showRainierErrorMessage(r))
+
+#  delete a device
+r = rl.deleteDevicesByEid("IR1101-K9+AB123456788")
+
+# Did that request work?
+if r.status_code <= 201:
+    print("Delete device done: {}".format(rl.showRainierErrorMessage(r)))
+else:
+    print("Failed :(")
+    print(r.content)
+    print(rl.showRainierErrorMessage(r))

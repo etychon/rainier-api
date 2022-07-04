@@ -50,7 +50,7 @@ class rainierlib:
                     "password": self.RAINIER_PASSWORD}
             resp = requests.post(self.RAINIER_BASEURL+'/iam/auth/token',
                                  json=task, verify=False)
-            if resp.status_code != 200:
+            if resp.status_code != 200 and resp.status_code != 201:
                 # This means something went wrong.
                 if self.DEBUG:
                     print('**ERROR** ', resp.status_code, ' ', resp.reason)
@@ -92,23 +92,34 @@ class rainierlib:
             print("Autentication OK.")
             return(0)
 
-    def runRainierQuery(self, type, querystr):
+    # Verb can be 'GET', 'POST', etc...
+    def runRainierQuery(self, verb, querystr, data=None):
 
         headers = {"Content-Type": "application/json",
                    "Authorization": "Bearer " + self.access_token,
                    "x-access-token": self.access_token,
                    "x-tenant-id": self.RAINIER_TENANTID}
 
-        resp = requests.get(self.RAINIER_BASEURL+querystr,
-                            headers=headers, verify=False)
+        try:
+            resp = requests.request(verb, self.RAINIER_BASEURL+querystr,
+                                    headers=headers, verify=False, data=data)
+
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            print("Http Error:", errh)
+        except requests.exceptions.ConnectionError as errc:
+            print("Error Connecting:", errc)
+        except requests.exceptions.Timeout as errt:
+            print("Timeout Error:", errt)
+        except requests.exceptions.RequestException as err:
+            print("OOps: Something Else", err)
 
         if resp.status_code != 200:
             # This means something went wrong.
             if self.DEBUG:
                 print('**ERROR** ', resp.status_code, ' ', resp.reason)
-            exit(1)
-        else:
-            return(resp.json())
+
+        return(resp)
 
     def setAPIkey(self, key_name, key_secret, org_name):
         self.RAINIER_API_KEY_NAME = key_name
@@ -161,10 +172,6 @@ class rainierlib:
 
         print("Requesting device list for tenant ID %s..." %
               self.RAINIER_TENANTID)
-        headers = {"Content-Type": "application/json",
-                   "Authorization": "Bearer " + self.access_token,
-                   "x-access-token": self.access_token,
-                   "x-tenant-id": self.RAINIER_TENANTID}
 
         if filter:
             filter_str = '&filter=  '+filter+'"'
@@ -173,10 +180,11 @@ class rainierlib:
 
         while size > 0:
             resp = self.runRainierQuery(
-                'get', '/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page=' + str(page) + '&size='+str(size) + filter_str)
-            if not resp:
+                'GET', '/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page=' + str(page) + '&size='+str(size) + filter_str)
+            if resp.return_code != 200:
                 return(None)
             else:
+                resp = resp.json()
                 devices = devices + resp['results']
                 total = int(resp['total'])
                 received = len(resp['results'])
@@ -243,5 +251,56 @@ class rainierlib:
 
         try:
             return(s)
+        except:
+            return(None)
+
+    # eid is this format SKU+SN, ei: IE-3400-8P2S+AB123456789
+    def deleteDevicesByEid(self, eid):
+
+        myobj = '{"eids": ["' + eid + '"],"rollbackConfig":false}'
+
+        resp = self.runRainierQuery(
+            'DELETE', '/resource/rest/api/v1/devices/delete', data=myobj)
+
+        return(resp)
+
+    def getDeviceTypeFromSKU(self, sku):
+        sku = sku.upper()
+        if (sku.startswith("IE-34")):
+            return("ie3400")
+        if (sku.startswith("IR11")):
+            return("ir1100")
+        if (sku.startswith("IR-8")):
+            return("ir800")
+
+        return(None)
+
+        # https://rainierdemo3.ciscoiotdev.io/resource/rest/api/v1/devices POST
+        # [{"eid":"IE-3400-8P2S+AB123456789","fields":{"deviceType":"ie3400","configGroup":"IE3400 Default","field:name":"deletemetwo"}}]
+    def addNewDevice(self, eid, name, configGroup):
+
+        deviceType = self.getDeviceTypeFromSKU(eid)
+
+        if not deviceType:
+            return(None)
+
+        myobj = '[{"eid":"' + eid + \
+            '","fields":{"deviceType":"'+deviceType + \
+                '","configGroup":"'+configGroup+'","field:name":"'+name+'"}}]'
+
+        print(myobj)
+
+        resp = self.runRainierQuery(
+            'POST', '/resource/rest/api/v1/devices', data=myobj)
+
+        if resp.status_code != 200:
+            print("Something went wrong when adding device")
+
+        return(resp)
+
+    def showRainierErrorMessage(self, r):
+
+        try:
+            return(json.loads(r.content)['message'])
         except:
             return(None)
