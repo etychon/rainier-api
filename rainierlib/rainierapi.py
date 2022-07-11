@@ -304,3 +304,34 @@ class rainierlib:
             return(json.loads(r.content)['message'])
         except:
             return(None)
+
+
+    def validateCC(self, username, url, api_key, account_id, carrier_id, account_name):
+
+        myobj = '{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"'+\
+            account_id+'","carrier_id":"'+carrier_id+'","account_name":"'+account_name+'","enabled":true}'
+
+        print(myobj)
+
+        resp = self.runRainierQuery(
+            'POST', '/iam/tenants/'+self.RAINIER_TENANTID+'/control-centers/validate/', data=myobj)
+
+        if resp.status_code != 200:
+            print("Something went wrong when validating CC")
+
+        return(resp)
+
+    def addCC(self, username, url, api_key, account_id, carrier_id, account_name):
+
+        myobj = '{"control_center_list":[{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"'+\
+            account_id+'","carrier_id":"'+carrier_id+'","account_name":"'+account_name+'","enabled":true}]}'
+            
+        print(myobj)
+
+        resp = self.runRainierQuery(
+            'PUT', '/iam/tenants/'+self.RAINIER_TENANTID+'/control-centers/', data=myobj)
+
+        if resp.status_code != 200:
+            print("Something went wrong when adding CC")
+
+        return(resp)
