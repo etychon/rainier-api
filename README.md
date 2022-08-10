@@ -22,7 +22,7 @@ You need to rename `constants.py.example` to `constants.py` and add your own var
 
 For example to add new tenant 'ACME_1_EU' with username and password authentication, add a block to `constants.py` like this:
 
-```
+```python
 if t_name == "ACME_1_EU":
   ### ACME company 1 on EU cluster with username and password
   RAINIER_BASEURL = "https://eu.ciscoiot.com"
@@ -33,7 +33,7 @@ if t_name == "ACME_1_EU":
 
 To add a new new tenant using API Key authentication, add a block to `constants.py` like this:
 
-```
+```python
 if t_name == 'ACME_3_API':
   # ACME company 3 using API Keys
   RAINIER_BASEURL = "https://us.ciscoiot.com"
@@ -123,7 +123,7 @@ Check this example to see how to use the library:
 
 Once the `constants.py` is complete with your credentials you can load them very simply with just a couple of lines, for example to load the credentials for organisation "ACME_4_API" simply do this:
 
-```
+```python
 import constants
 constants.load_tenant_creds("ACME_4_API")
 ```
@@ -132,7 +132,7 @@ constants.load_tenant_creds("ACME_4_API")
 
 Once the constants have been loaded at the previous step, add `rainierlib` module, load and validate the credentials with just a couple line:
 
-```
+```python
 import rainierlib.rainierapi
 rl = rainierlib.rainierapi.rainierlib()
 rl.loadTParameters(constants)
@@ -146,7 +146,7 @@ You should see a message "Autentication OK." if you run this and all is fine.
 
 The library will do all the heavy lifting for you, for example you list all the devices and associated parameters with just one line:
 
-```
+```python
 print(rl.getAllDevices())
 ```
 
@@ -160,7 +160,7 @@ Word of caution as this will create one API call per device, this request is slo
 
 PS: you can convert this output (in JSON) to CSV very simply by doing: `dasel -f <input_filename>.json -p json -w csv > <output_filename>.csv`
 
-```
+```python
 r = rl.getAllDevices()
 
 # Here is the basic list
