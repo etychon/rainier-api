@@ -7,6 +7,7 @@ rainier-library.py: a library class to do usefull things with Cisco IoT OD APIs
 
 import requests
 import json
+import time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -26,6 +27,8 @@ class rainierlib:
     access_token = ""
     USE_API_KEY = ""
     PAGE_SIZE = 200
+    REAUTH_TIMER = 120
+    auth_timestamp = 0
     edm_devices = []
 
     def libVersion(self):
@@ -46,6 +49,12 @@ class rainierlib:
         self.USE_API_KEY = False
 
     def authenticate(self):
+
+        # Check if we still hold a valid token, is yes, exit
+        if int(time.time()) - self.auth_timestamp < self.REAUTH_TIMER:
+            return(0)
+
+        # Timer expired or no valid authentication yet
         if self.USE_API_KEY == False:
             # Let's authenticate with username / password
             print("Authenticating with username/password...")
@@ -93,6 +102,8 @@ class rainierlib:
             exit(1)
         else:
             print("Autentication OK.")
+            # Refresh timer to the current time since we have a new token
+            self.auth_timestamp = int(time.time())
             return(0)
 
     # Verb can be 'GET', 'POST', etc...
@@ -102,6 +113,9 @@ class rainierlib:
                    "Authorization": "Bearer " + self.access_token,
                    "x-access-token": self.access_token,
                    "x-tenant-id": self.RAINIER_TENANTID}
+
+        # Authenticate or refresh token if needed
+        self.authenticate()
 
         try:
             resp = requests.request(verb, self.RAINIER_BASEURL+querystr,
@@ -308,11 +322,11 @@ class rainierlib:
         except:
             return(None)
 
-
     def validateCC(self, username, url, api_key, account_id, carrier_id, account_name):
 
-        myobj = '{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"'+\
-            account_id+'","carrier_id":"'+carrier_id+'","account_name":"'+account_name+'","enabled":true}'
+        myobj = '{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"' +\
+            account_id+'","carrier_id":"'+carrier_id + \
+                '","account_name":"'+account_name+'","enabled":true}'
 
         print(myobj)
 
@@ -326,9 +340,10 @@ class rainierlib:
 
     def addCC(self, username, url, api_key, account_id, carrier_id, account_name):
 
-        myobj = '{"control_center_list":[{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"'+\
-            account_id+'","carrier_id":"'+carrier_id+'","account_name":"'+account_name+'","enabled":true}]}'
-            
+        myobj = '{"control_center_list":[{"username":"'+username+'","url":"'+url+'","api_key":"'+api_key+'","account_id":"' +\
+            account_id+'","carrier_id":"'+carrier_id + \
+                '","account_name":"'+account_name+'","enabled":true}]}'
+
         print(myobj)
 
         resp = self.runRainierQuery(

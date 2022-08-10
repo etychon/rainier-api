@@ -17,6 +17,8 @@ parser.add_argument('--verbose', '-v',
                     help='verbose output', action='store_true')
 parser.add_argument(
     '--tenant', '-t', help='tenant nickname as defined in constants.py')
+parser.add_argument(
+    '--output', '-o', help='Write JSON output as a file')
 args = parser.parse_args()
 
 # Read tenant nick name from CLI args if provided
@@ -46,7 +48,21 @@ rl.loadTParameters(constants)
 ## Get all devices in this tenant
 r = rl.getAllDevices()
 
-print(r)
+# Let's add more information to that list - slow and expensive
+# the JSON  file can be converted to CSV laster using ie:
+# dasel -f TSAEU.json -p json -w csv > TSAEU.csv
+
+for item in r:
+    print(item)
+    print(item['name'])
+    print(item['href'])
+    resp = rl.runRainierQuery('GET', item['href']+'/data')
+    if resp.status_code != 200:
+        print("HTTPS return code: {}".format(resp.status_code))
+    else:
+        print(resp.json())
+        for f in resp.json():
+            item.update({f['field']: f['value']})
 
 #print("Getting list #2")
 # Get all devices in this tenant
@@ -96,3 +112,9 @@ print(r)
 #    print("Failed :(")
 #    print(r.content)
 #    print(rl.showRainierErrorMessage(r))
+
+if args.output:
+    with open(args.output, 'w') as json_file:
+        json.dump(r, json_file, indent=4, separators=(',', ': '))
+
+    print('Successfully written to the JSON file')

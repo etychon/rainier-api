@@ -150,6 +150,41 @@ The library will do all the heavy lifting for you, for example you list all the 
 print(rl.getAllDevices())
 ```
 
+# Getting the device list with all the details
+
+From the previous example we can get all devices from the selected organisation. But this list is missing some information, for example the AP firmware release is not in that inventory. The only way to get the AP firmware release is to query the specific device data by querying the "href".
+
+The code below gets all devices, and for each device queries the specific device attributed. It extends the current dictionary from getAllDevices() by adding all the additional parameters from the device specific query.
+
+Word of caution as this will create one API call per device, this request is slow and expensive to run.
+
+PS: you can convert this output (in JSON) to CSV very simply by doing: `dasel -f <input_filename>.json -p json -w csv > <output_filename>.csv`
+
+```
+r = rl.getAllDevices()
+
+# Here is the basic list
+print(r)
+
+# Let's add more information to that list - slow and expensive
+
+for item in r:
+    print(item['name'])
+    # Let's query the specific device details
+    resp = rl.runRainierQuery('GET', item['href']+'/data')
+    if resp.status_code != 200:
+        print("HTTPS return code: {}".format(resp.status_code))
+    else:
+        # Add all fields to this device's dict entry
+        for f in resp.json():
+            item.update({f['field']: f['value']})
+
+# Here is the enriched list with all additional properties
+print(r)
+
+```
+
+
 # Why is this called "Rainier"?
 
 Let's talk about the internal laundry. When we start developing a product we do not know yet what is going to be the customer facing product name, so we always use internal project names early on.
