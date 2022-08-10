@@ -32,12 +32,21 @@ print("Using tenant = {}, url = {}".format(
 # Instanciate the rainierlib class
 rl = rainierlib.rainierapi.rainierlib()
 
+# Set the debug flag if verbose is set
+if args.verbose:
+    rl.enableDebugs(True)
+
+if rl.DEBUG:
+    print("**INFO** : Debugs enabled")
+
 # Load all parameters for cluster, authentication, username, keys, etc... for this tenant
 rl.loadTParameters(constants)
 
 #print("Getting list #1")
 ## Get all devices in this tenant
-#print(rl.getAllDevices())
+r = rl.getAllDevices()
+
+print(r)
 
 #print("Getting list #2")
 # Get all devices in this tenant
@@ -67,23 +76,23 @@ rl.loadTParameters(constants)
 #print("Done.")
 
 #  add a new device
-r = rl.addNewDevice("IR1101-K9+AB123456788", "deleteme",
-                    "etychon-ir1101-ecvd-adv-egon-nocell")
+#r = rl.addNewDevice("IR1101-K9+AB123456788", "deleteme",
+#                    "etychon-ir1101-ecvd-adv-egon-nocell")
 
 # Did that request work?
-if r.status_code == 201:
-    print("Adding device done: {}".format(rl.showRainierErrorMessage(r)))
-else:
-    print("Failed :(")
-    print(rl.showRainierErrorMessage(r))
+#if r.status_code == 201:
+#    print("Adding device done: {}".format(rl.showRainierErrorMessage(r)))
+#else:
+#    print("Failed :(")
+#    print(rl.showRainierErrorMessage(r))
 
 #  delete a device
-r = rl.deleteDevicesByEid("IR1101-K9+AB123456788")
+#r = rl.deleteDevicesByEid("IR1101-K9+AB123456788")
 
 # Did that request work?
-if r.status_code <= 201:
-    print("Delete device done: {}".format(rl.showRainierErrorMessage(r)))
-else:
-    print("Failed :(")
-    print(r.content)
-    print(rl.showRainierErrorMessage(r))
+#if r.status_code <= 201:
+#    print("Delete device done: {}".format(rl.showRainierErrorMessage(r)))
+#else:
+#    print("Failed :(")
+#    print(r.content)
+#    print(rl.showRainierErrorMessage(r))

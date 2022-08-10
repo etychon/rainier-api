@@ -37,6 +37,9 @@ class rainierlib:
     def getAPIbaseURL(self):
         return(self.RAINIER_BASEURL)
 
+    def enableDebugs(self, b):
+        self.DEBUG = b
+
     def setUsernamePassword(self, username, password):
         self.RAINIER_USERNAME = username
         self.RAINIER_PASSWORD = password
@@ -103,7 +106,6 @@ class rainierlib:
         try:
             resp = requests.request(verb, self.RAINIER_BASEURL+querystr,
                                     headers=headers, verify=False, data=data)
-
             resp.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             print("Http Error:", errh)
@@ -113,12 +115,11 @@ class rainierlib:
             print("Timeout Error:", errt)
         except requests.exceptions.RequestException as err:
             print("OOps: Something Else", err)
-
+            raise SystemExit(err)
         if resp.status_code != 200:
             # This means something went wrong.
             if self.DEBUG:
                 print('**ERROR** ', resp.status_code, ' ', resp.reason)
-
         return(resp)
 
     def setAPIkey(self, key_name, key_secret, org_name):
@@ -181,8 +182,10 @@ class rainierlib:
         while size > 0:
             resp = self.runRainierQuery(
                 'GET', '/resource/rest/api/v1/devices?sortBy=eid&sortDir=asc&page=' + str(page) + '&size='+str(size) + filter_str)
-            if resp.return_code != 200:
-                return(None)
+            if resp.status_code != 200:
+                if self.DEBUG:
+                    print("HTTPS return code: {}".format(resp.status_code))
+                return(devices)
             else:
                 resp = resp.json()
                 devices = devices + resp['results']
