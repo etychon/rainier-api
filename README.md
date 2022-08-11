@@ -184,6 +184,7 @@ print(r)
 
 ```
 
+You can find a specific example on how to do that here: https://github.com/etychon/rainier-api/blob/main/get-full-devices-details.py
 
 # Why is this called "Rainier"?
 
