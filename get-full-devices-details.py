@@ -65,20 +65,29 @@ r = rl.getAllDevices()
 # the JSON  file can be converted to CSV laster using ie:
 # dasel -f TSAEU.json -p json -w csv > TSAEU.csv
 
+progress = 0
+
 for item in r:
-    print(item)
-    print(item['name'])
-    print(item['href'])
+    progress += 1
+    print("[{}/{}] Getting info for: {} ...".format(progress, len(r), item['name']), end="")
+    # Run query for this specific device to gather all additional information
     resp = rl.runRainierQuery('GET', item['href']+'/data')
     if resp.status_code != 200:
+        # Oops
         print("HTTPS return code: {}".format(resp.status_code))
     else:
-        print(resp.json())
+        # Now add all those attributed to the "r" dictionary 
+        # This effectively enrich the existing list of devices
+        # with this new information, such as AP IOS version.
         for f in resp.json():
             item.update({f['field']: f['value']})
+        print(" done")
 
 if args.output:
+    # If output file required, open file for writing and dump
     with open(args.output, 'w') as json_file:
         json.dump(r, json_file, indent=4, separators=(',', ': '))
-
     print('Successfully written to the JSON file: {}'.format(args.output))
+else:
+    # Print is on stdout if not file specificed
+    print(json.dumps(r, indent=4))
