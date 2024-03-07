@@ -353,3 +353,17 @@ class rainierlib:
             print("Something went wrong when adding CC")
 
         return(resp)
+
+    def cancelFirmwareJob(self, groupName):
+
+        myobj = '{}'
+
+        print(myobj)
+
+        resp = self.runRainierQuery(
+            'PUT', '/resource/rest/api/v1/groups/'+groupName+'/cancel_software_upgrade')
+
+        if resp.status_code != 200:
+            print("Something went wrong when canceling firmware upgrade job")
+
+        return(resp)

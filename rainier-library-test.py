@@ -48,33 +48,11 @@ rl.loadTParameters(constants)
 ## Get all devices in this tenant
 r = rl.getAllDevices()
 
-# Let's add more information to that list - slow and expensive
-# the JSON  file can be converted to CSV laster using ie:
-# dasel -f TSAEU.json -p json -w csv > TSAEU.csv
+print(r)
 
-for item in r:
-    print(item)
-    print(item['name'])
-    print(item['href'])
-    resp = rl.runRainierQuery('GET', item['href']+'/data')
-    if resp.status_code != 200:
-        print("HTTPS return code: {}".format(resp.status_code))
-    else:
-        print(resp.json())
-        for f in resp.json():
-            item.update({f['field']: f['value']})
+c = rl.cancelFirmwareJob("094319f8-a3c0-4fbf-95fe-3b95847e1919")
 
-#print("Getting list #2")
-# Get all devices in this tenant
-#print("Getting all devices in this organisation...")
-#print(rl.getAllDevices())
-
-#print("Getting all details for gateway with SN...")
-#r = rl.getDeviceDetails(sn="FCW2424P02X")
-#if r:
-#    print("Gateway name is " + r['name'])
-#else:
-#    print("Gateway not found ")
+print(c)
 
 #print("Getting all details of this gateway's name...")
 #print(rl.getDeviceDetails(device_name="egon-ir1101-1"))
@@ -112,9 +90,3 @@ for item in r:
 #    print("Failed :(")
 #    print(r.content)
 #    print(rl.showRainierErrorMessage(r))
-
-if args.output:
-    with open(args.output, 'w') as json_file:
-        json.dump(r, json_file, indent=4, separators=(',', ': '))
-
-    print('Successfully written to the JSON file')
