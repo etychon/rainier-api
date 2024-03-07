@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+"""
+Example of execution to create a new org, name "etychon-test-003", on EU cluster, with SEA, App Management and CyberVision:
+
+  python3 ./new-org-creation.py --operation create --cluster EU etychon-test-003 --services sra app-mgmt ccv
+"""
+
 import requests, json
 import constants
 import argparse
@@ -105,7 +111,47 @@ def create_new_org():
 				description="Track and monitor telemetry of your assets and sensors.", 
 				enabled=("asset-visibility" in args.services), 
 				status="active"
-			)
+			),
+			dict(
+				uuid="989cf627-c94a-4383-a83a-e2504f7c8137", 
+				name="network-mgmt", 
+				display_name="Edge Device Manager", 
+				description="Manage your network of devices.", 
+				enabled=("network-mgmt" in args.services), 
+				status="active"
+			),
+        	dict(
+				uuid="10e52dda-479f-4520-b18f-c32da317de66", 
+				name="ccv", 
+				display_name="Cyber Vision", 
+				description="Secure your Industrial Control Systems.", 
+				enabled=("ccv" in args.services), 
+				status="active"
+			), 
+        	dict(
+				uuid="dd614e0f-4b1f-a83a-f922-ab1ef62791c4", 
+				name="urwb", 
+				display_name="Industrial Wireless", 
+				description="Configure and manage your Industrial Wireless devices", 
+				enabled=("urwb" in args.services), 
+				status="active"
+			), 
+        	dict(
+				uuid="57533aaa-65e2-4b01-a61d-b25adcbfc199", 
+				name="sra", 
+				display_name="Secure Equipment Access", 
+				description="Securely access your equipment.", 
+				enabled=("sra" in args.services), 
+				status="active"
+			), 
+        	dict(
+				uuid="67fdbe66-dd61-4ffe-91cc-d05cd5caac60", 
+				name="edge-intelligence", 
+				display_name="Edge Intelligence", 
+				description="Extract, Transform, Govern and Deliver your data from Edge to Multi Cloud destinations.", 
+				enabled=("edge-intelligence" in args.services),
+				status="active"
+			) 
 		]
 	)
 
@@ -114,15 +160,17 @@ def create_new_org():
 	resp = requests.post(constants.RAINIER_BASEURL+'/iam/tenants/',
 		headers=headers,verify=False, data=json.dumps(params))
 
+	print(resp.status_code, ' ', resp.reason, ' ')
 	if resp.status_code != 200:
 		# This means something went wrong.
-		print('**ERROR** ' , resp.status_code, ' ', resp.reason, ' ')
-		print(resp.json().get('message'))
-		# print(resp)
+		print('**ERROR** ' , resp.json().get('message'))
 		print('This operation did not execute.')
 		exit(1)
 	else:
+		print('Operation completed with success.')
+		print('Services enabled: %s' % args.services)
 		print(resp)
+
 	return(0)
 
 def update_org():
